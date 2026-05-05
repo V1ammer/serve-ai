@@ -56,14 +56,20 @@ def recommend_models(sys_info):
     table.add_column("Quality Level", style="yellow")
     table.add_column("HuggingFace Link", style="blue")
 
-    # Define quants: (name, bits_per_weight, description)
+    # Full standard GGUF quantization map (approximate bits per weight)
     QUANTS = [
         ("Q8_0", 8.5, "Near Lossless"),
-        ("Q6_K", 6.6, "High Quality"),
-        ("Q5_K_M", 5.5, "Balanced"),
-        ("Q4_K_M", 4.8, "Standard"),
-        ("Q3_K_M", 3.7, "Lightweight"),
-        ("Q2_K", 2.6, "Extreme Compression")
+        ("Q6_K", 6.6, "Very High Quality"),
+        ("Q5_K_M", 5.7, "High (Medium)"),
+        ("Q5_K_S", 5.5, "High (Small)"),
+        ("Q4_K_M", 4.8, "Standard (Medium)"),
+        ("Q4_K_S", 4.6, "Standard (Small)"),
+        ("Q3_K_L", 4.2, "Light (Large)"),
+        ("Q3_K_M", 3.9, "Light (Medium)"),
+        ("Q3_K_S", 3.5, "Light (Small)"),
+        ("Q2_K", 3.3, "Extreme Compression"),
+        ("IQ2_M", 2.7, "Ultra (Medium)"),
+        ("IQ2_XS", 2.3, "Ultra (Extra Small)")
     ]
 
     MODELS_TO_CHECK = [
@@ -72,15 +78,18 @@ def recommend_models(sys_info):
     ]
 
     for name, params, link in MODELS_TO_CHECK:
-        best_q = None
+        # Find all quants that fit in safe_limit
+        viable_quants = []
         for q_name, bits, desc in QUANTS:
             est_size = (params * bits) / 8
             if est_size < safe_limit:
-                best_q = (q_name, est_size, desc)
-                break
+                viable_quants.append((q_name, est_size, desc))
         
-        if best_q:
-            table.add_row(name, best_q[0], f"{best_q[1]:.1f}GB", best_q[2], f"https://hf.co/{link}")
+        if viable_quants:
+            # Show the best 3 quants that fit (highest quality first)
+            for i, (q_name, size, desc) in enumerate(viable_quants[:3]):
+                label = f"{name}" if i == 0 else ""
+                table.add_row(label, q_name, f"{size:.1f}GB", desc, f"https://hf.co/{link}" if i == 0 else "")
         else:
             table.add_row(name, "None", "Too Large", "N/A", f"https://hf.co/{link}")
     
