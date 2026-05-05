@@ -44,6 +44,11 @@ uv sync
    ```bash
    python benchmark.py --coding
    ```
+4. **Serve/Chat with a Model Locally:**
+   ```bash
+   python serve.py
+   ```
+   (Follow the interactive prompt to select your model).
 
 ## Project Structure
 - `benchmark.py`: Main entry point and result reporting.

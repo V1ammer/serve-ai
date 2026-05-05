@@ -1,0 +1,51 @@
+import os
+import argparse
+from hardware import detect_system
+from engines import LlamaCppEngine
+from rich.console import Console
+
+def main():
+    parser = argparse.ArgumentParser(description="Serve-AI: Local LLM Runner")
+    parser.add_argument("--model", help="Path to the model file")
+    parser.add_argument("--engine", default="llama.cpp", choices=["llama.cpp", "vllm"], help="Engine to use")
+    args = parser.parse_args()
+
+    console = Console()
+    sys_info = detect_system()
+    
+    models_dir = "models"
+    available_models = []
+    if os.path.exists(models_dir):
+        available_models = [f for f in os.listdir(models_dir) if f.endswith(".gguf")]
+
+    selected_model = args.model
+
+    if not selected_model:
+        if not available_models:
+            console.print("[red]No models found in models/ directory.[/red]")
+            return
+        
+        console.print("[bold cyan]Available Models:[/bold cyan]")
+        for i, m in enumerate(available_models):
+            console.print(f"{i+1}. {m}")
+        
+        choice = input("\nSelect a model (number) or path: ")
+        try:
+            idx = int(choice) - 1
+            selected_model = os.path.join(models_dir, available_models[idx])
+        except (ValueError, IndexError):
+            selected_model = choice
+
+    if not os.path.exists(selected_model):
+        console.print(f"[red]Model file not found: {selected_model}[/red]")
+        return
+
+    if args.engine == "llama.cpp":
+        engine = LlamaCppEngine("llama.cpp", selected_model, sys_info['cpu']['threads'])
+        engine.chat()
+    else:
+        console.print("[yellow]vLLM serving for APU/CPU requires specific configuration (ROCm/OpenVINO).[/yellow]")
+        console.print("Currently, only llama.cpp is optimized for 14GB RAM local chat.")
+
+if __name__ == "__main__":
+    main()

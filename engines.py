@@ -34,6 +34,30 @@ class LlamaCppEngine(BenchmarkEngine):
         except Exception as e:
             return f"Error: {str(e)}"
 
+    def chat(self):
+        """Interactive chat session for local use."""
+        print(f"Loading {self.model_path} for chat...")
+        try:
+            llm = Llama(
+                model_path=self.model_path,
+                n_threads=self.threads,
+                n_ctx=2048,
+                verbose=False
+            )
+            print("\nModel loaded! Type '/exit' to quit.\n")
+            while True:
+                user_input = input("User: ")
+                if user_input.lower() in ["/exit", "/quit"]:
+                    break
+                
+                print("Assistant: ", end="", flush=True)
+                for chunk in llm(user_input, stream=True, max_tokens=512):
+                    text = chunk['choices'][0]['text']
+                    print(text, end="", flush=True)
+                print("\n")
+        except Exception as e:
+            print(f"Chat Error: {e}")
+
 class VllmCpuEngine(BenchmarkEngine):
     def run(self, prompt="Write a quicksort function in Python."):
         # vLLM on CPU is heavy. We use a subprocess to isolate its memory usage completely.
