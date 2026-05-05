@@ -1,5 +1,5 @@
 {
-  description: "Serve-AI Benchmarking Environment";
+  description = "Serve-AI Benchmarking Environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -25,8 +25,6 @@
             git
             zlib
             stdenv.cc.cc.lib
-            # Add ROCm dependencies if needed for AMD GPU offload in the future
-            # rocmPackages.clr
           ];
 
           shellHook = ''
