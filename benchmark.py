@@ -39,7 +39,7 @@ def save_results_md(results, sys_info):
             
     return filename
 
-def recommend_models(sys_info):
+def recommend_models(sys_info, models_dir="models"):
     """Recommends best possible quantization based on total fast memory."""
     # Fast memory only: RAM + ZRAM + VRAM
     total_vram = sum(gpu.get('vram_total', 0) for gpu in sys_info['gpus'])
@@ -48,12 +48,18 @@ def recommend_models(sys_info):
     # OS headroom: 15% or 1.5GB
     safe_limit = max(total_fast_mem * 0.85, total_fast_mem - 1.5)
     
+    # Check existing files
+    existing_files = []
+    if os.path.exists(models_dir):
+        existing_files = [f.lower() for f in os.listdir(models_dir) if f.endswith(".gguf")]
+
     console = Console()
     table = Table(title=f"Hardware-Adaptive Recommendations (Fast Memory: {total_fast_mem:.1f}GB)")
     table.add_column("Model Family", style="cyan")
     table.add_column("Best Quant for You", style="magenta")
     table.add_column("Est. Size", style="green")
     table.add_column("Quality Level", style="yellow")
+    table.add_column("Status", style="bold")
     table.add_column("HuggingFace Link", style="blue")
 
     # Full standard GGUF quantization map (approximate bits per weight)
@@ -78,7 +84,6 @@ def recommend_models(sys_info):
     ]
 
     for name, params, link in MODELS_TO_CHECK:
-        # Find all quants that fit in safe_limit
         viable_quants = []
         for q_name, bits, desc in QUANTS:
             est_size = (params * bits) / 8
@@ -86,16 +91,32 @@ def recommend_models(sys_info):
                 viable_quants.append((q_name, est_size, desc))
         
         if viable_quants:
-            # Show the best 3 quants that fit (highest quality first)
             for i, (q_name, size, desc) in enumerate(viable_quants[:3]):
                 label = f"{name}" if i == 0 else ""
-                table.add_row(label, q_name, f"{size:.1f}GB", desc, f"https://hf.co/{link}" if i == 0 else "")
+                
+                # Check status
+                status = "[red]Missing[/red]"
+                search_term = f"{name.lower()}-{q_name.lower()}"
+                if any(search_term in f for f in existing_files):
+                    status = "[green]Downloaded[/green]"
+                
+                table.add_row(
+                    label, q_name, f"{size:.1f}GB", desc, status, 
+                    f"https://hf.co/{link}" if i == 0 else ""
+                )
             
-            # Suggest DFlash drafter for this family
+            # Suggest DFlash drafter
+            drafter_status = "[red]Missing[/red]"
+            if any("dflash" in f and name.lower() in f for f in existing_files):
+                drafter_status = "[green]Downloaded[/green]"
+                
             drafter_link = link.replace("-GGUF", "-DFlash-GGUF")
-            table.add_row("", "[bold yellow]DFlash Drafter[/bold yellow]", "<1.5GB", "Speedup 2x-4x", f"https://hf.co/{drafter_link}")
+            table.add_row(
+                "", "[bold yellow]DFlash Drafter[/bold yellow]", "<1.5GB", "Speedup 2x-4x", 
+                drafter_status, f"https://hf.co/{drafter_link}"
+            )
         else:
-            table.add_row(name, "None", "Too Large", "N/A", f"https://hf.co/{link}")
+            table.add_row(name, "None", "Too Large", "N/A", "[grey]N/A[/grey]", f"https://hf.co/{link}")
     
     console.print(table)
     console.print("\n[bold yellow]Selection Logic:[/bold yellow] Chosen based on 80% of your total RAM+VRAM+Swap.")
@@ -111,7 +132,7 @@ def main():
     sys_info = detect_system()
     
     if args.recommend:
-        recommend_models(sys_info)
+        recommend_models(sys_info, args.models_dir)
         return
 
     available_fast_mem = sys_info['ram']['available'] + sys_info['ram']['zram']
