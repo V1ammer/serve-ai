@@ -8,6 +8,7 @@ def main():
     parser = argparse.ArgumentParser(description="Serve-AI: Local LLM Runner")
     parser.add_argument("--model", help="Path to the model file")
     parser.add_argument("--draft", help="Path to the draft model (DFlash) for speedup")
+    parser.add_argument("--kv-quant", default="q8_0", help="KV Cache quantization type (e.g., q4_0, q8_0) for TurboQuant-like effect")
     parser.add_argument("--engine", default="llama.cpp", choices=["llama.cpp", "vllm"], help="Engine to use")
     args = parser.parse_args()
 
@@ -42,7 +43,7 @@ def main():
         return
 
     if args.engine == "llama.cpp":
-        engine = LlamaCppEngine("llama.cpp", selected_model, sys_info['cpu']['threads'], args.draft)
+        engine = LlamaCppEngine("llama.cpp", selected_model, sys_info['cpu']['threads'], args.draft, args.kv_quant)
         engine.chat()
     else:
         console.print("[yellow]vLLM serving for APU/CPU requires specific configuration (ROCm/OpenVINO).[/yellow]")

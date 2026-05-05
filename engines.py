@@ -12,9 +12,10 @@ class BenchmarkEngine:
         raise NotImplementedError
 
 class LlamaCppEngine(BenchmarkEngine):
-    def __init__(self, name, model_path, threads=6, draft_model_path=None):
+    def __init__(self, name, model_path, threads=6, draft_model_path=None, kv_quant="q8_0"):
         super().__init__(name, model_path, threads)
         self.draft_model_path = draft_model_path
+        self.kv_quant = kv_quant
 
     def run(self, prompt="Write a quicksort function in Python."):
         try:
@@ -22,6 +23,8 @@ class LlamaCppEngine(BenchmarkEngine):
             llm = Llama(
                 model_path=self.model_path,
                 draft_model=self.draft_model_path,
+                type_k=self.kv_quant, # KV Cache quantization (TurboQuant style)
+                type_v=self.kv_quant,
                 n_threads=self.threads,
                 n_ctx=2048,
                 verbose=False,
