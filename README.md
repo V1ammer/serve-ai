@@ -2,13 +2,6 @@
 
 A hardware-adaptive benchmarking suite designed for local execution of Qwen 3.6 models (27B Dense and 35B MoE) on resource-constrained systems.
 
-## Key Features
-- **Hardware-Adaptive:** Automatically detects CPU threads, available RAM, and Swap size to determine if a model can safely load.
-- **OOM-Safe Architecture:** Uses subprocess isolation for model loading. If the OS OOM Killer (SIGKILL) strikes, the main benchmark script survives and continues to the next test.
-- **Cross-Platform:** Full support for NixOS (Flakes), Ubuntu, and Windows.
-- **Performance Metrics:** Generates a clean table of Tokens per Second (t/s).
-- **Coding Quality:** Includes a `--coding` flag to evaluate models on HumanEval-style Python tasks.
-
 ## Supported Engines
 - **llama.cpp:** High-efficiency CPU/Vulkan inference (via `llama-cpp-python`).
 - **vLLM / SGLang:** Placeholder support for CPU/ROCm backends (requires manual environment setup for APUs).
