@@ -30,22 +30,25 @@ uv sync
 ## Usage
 1. **Find Best Models for Your Hardware:**
    ```bash
-   python benchmark.py --recommend
+   uv run benchmark.py --recommend
    ```
    (This will show you exactly which Qwen 3.6 versions will fit in your RAM and give you download links).
 
 2. **Prepare Models:** Place your `.gguf` files in the `models/` directory.
-2. **Run Standard Benchmark:**
+
+3. **Run Standard Benchmark:**
    ```bash
-   python benchmark.py
+   uv run benchmark.py
    ```
-3. **Run Coding Quality Test:**
+
+4. **Run Coding Quality Test:**
    ```bash
-   python benchmark.py --coding
+   uv run benchmark.py --coding
    ```
-4. **Serve/Chat with a Model Locally:**
+
+5. **Serve/Chat with a Model Locally:**
    ```bash
-   python serve.py
+   uv run serve.py
    ```
    (Follow the interactive prompt to select your model).
 
