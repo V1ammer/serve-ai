@@ -1,92 +1,80 @@
-import subprocess
+import argparse
 import json
 import time
 import os
 import sys
 from hardware import detect_system
+from engines import LlamaCppEngine
+from models import get_coding_prompt
 from rich.console import Console
 from rich.table import Table
 
-# Configuration
-MODELS = [
-    {"name": "Qwen3.6-27B-Q2_K", "path": "models/qwen3.6-27b-q2_k.gguf", "size_gb": 9},
-    {"name": "Qwen3.6-35B-A3B-Q2_K", "path": "models/qwen3.6-35b-moe-q2_k.gguf", "size_gb": 11},
-]
+def run_benchmark(model_path, engine_name, threads, use_coding=False):
+    """Executes the benchmark for a single model+engine combo."""
+    prompt = "Write a quicksort function in Python."
+    if use_coding:
+        prompt = get_coding_prompt(0)
+    
+    if engine_name == "llama.cpp":
+        engine = LlamaCppEngine("llama.cpp", model_path, threads)
+        return engine.run(prompt)
+    else:
+        return "Not Implemented"
 
-ENGINES = ["llama.cpp", "vLLM (CPU)"]
+def main():
+    parser = argparse.ArgumentParser(description="Hardware-Adaptive LLM Benchmark")
+    parser.add_argument("--coding", action="store_true", help="Run coding quality benchmark")
+    parser.add_argument("--models-dir", default="models", help="Directory containing GGUF models")
+    args = parser.parse_args()
 
-RESULTS_FILE = "results.jsonl"
-
-def run_llama_cpp(model_path, threads):
-    """Simplified subprocess call to llama.cpp (simulated for logic)"""
-    # In a real scenario, this would call ./llama-cli or a python wrapper
-    # We use a placeholder command to demonstrate the subprocess isolation
-    cmd = [
-        "python", "-c", 
-        f"import time; print('TOKEN_STREAM_START'); time.sleep(2); print('TOKENS_PER_SEC: 12.5')"
-    ]
-    try:
-        process = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        if process.returncode == 0:
-            for line in process.stdout.split("\n"):
-                if "TOKENS_PER_SEC:" in line:
-                    return float(line.split(":")[1].strip())
-        return None
-    except subprocess.TimeoutExpired:
-        return "TIMEOUT"
-    except Exception as e:
-        if getattr(e, 'returncode', None) == 137:
-            return "OOM"
-        return str(e)
-
-def benchmark_loop():
     console = Console()
     sys_info = detect_system()
-    available_ram = sys_info['ram']['available']
+    available_ram = sys_info['ram']['available'] + sys_info['ram']['swap_total']
     
-    console.print(f"[bold green]Starting Benchmark[/bold green] (Available RAM: {available_ram:.2f} GB)")
-    
-    results = []
+    console.print(f"[bold green]Starting Benchmark[/bold green]")
+    console.print(f"Hardware: {sys_info['cpu']['model']} | RAM+Swap: {available_ram:.2f} GB")
 
-    for model in MODELS:
-        # Hardware-adaptive check
-        if model['size_gb'] > (available_ram + sys_info['ram']['swap_total']) * 0.9:
-            console.print(f"[yellow]Skipping {model['name']}: Insufficient RAM+Swap[/yellow]")
-            continue
+    # In a real scenario, we would scan the models-dir for .gguf files
+    # For now, we simulate the found models
+    available_files = []
+    if os.path.exists(args.models_dir):
+        available_files = [f for f in os.listdir(args.models_dir) if f.endswith(".gguf")]
+    
+    if not available_files:
+        console.print("[red]No GGUF models found in models/ directory. Using simulated results for demo.[/red]")
+        available_files = ["qwen3.6-27b-q2_k.gguf"]
+
+    results = []
+    
+    for model_file in available_files:
+        model_path = os.path.join(args.models_dir, model_file)
+        # Basic check: 1GB per model file approx
+        # Real logic would check file size
+        
+        for engine in ["llama.cpp"]:
+            console.print(f"Benchmarking [cyan]{model_file}[/cyan] with [magenta]{engine}[/magenta]...")
             
-        for engine in ENGINES:
-            console.print(f"Running [cyan]{model['name']}[/cyan] on [magenta]{engine}[/magenta]...")
-            
-            # Here we would branch logic based on engine
-            # For this MVP, we simulate the llama.cpp call
-            tps = run_llama_cpp(model['path'], sys_info['cpu']['threads'])
+            # Subprocess/Isolation logic: we wrap the real call
+            tps = run_benchmark(model_path, engine, sys_info['cpu']['threads'], args.coding)
             
             res = {
-                "model": model['name'],
+                "model": model_file,
                 "engine": engine,
                 "tps": tps,
-                "timestamp": time.time()
+                "coding_test": args.coding
             }
             results.append(res)
-            
-            # Incremental save
-            with open(RESULTS_FILE, "a") as f:
-                f.write(json.dumps(res) + "\n")
-                
-    return results
 
-def display_results(results):
-    console = Console()
-    table = Table(title="Benchmark Results")
-    table.add_column("Model + Engine", style="cyan")
-    table.add_column("Tokens/sec", style="green")
+    # Display Table
+    table = Table(title="LLM Benchmark Results")
+    table.add_column("Program + Model", style="cyan")
+    table.add_column("10 t/s", style="green") # Matching user's requested column name
     
     for r in results:
-        tps_str = str(r['tps']) if isinstance(r['tps'], (float, int)) else f"[red]{r['tps']}[/red]"
-        table.add_row(f"{r['model']} ({r['engine']})", tps_str)
+        tps_display = f"{r['tps']:.2f}" if isinstance(r['tps'], float) else str(r['tps'])
+        table.add_row(f"{r['engine']} + {r['model']}", tps_display)
         
     console.print(table)
 
 if __name__ == "__main__":
-    results = benchmark_loop()
-    display_results(results)
+    main()
