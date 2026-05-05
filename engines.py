@@ -12,11 +12,16 @@ class BenchmarkEngine:
         raise NotImplementedError
 
 class LlamaCppEngine(BenchmarkEngine):
+    def __init__(self, name, model_path, threads=6, draft_model_path=None):
+        super().__init__(name, model_path, threads)
+        self.draft_model_path = draft_model_path
+
     def run(self, prompt="Write a quicksort function in Python."):
         try:
             # Using mmap=True is critical for 14GB RAM systems loading large models
             llm = Llama(
                 model_path=self.model_path,
+                draft_model=self.draft_model_path,
                 n_threads=self.threads,
                 n_ctx=2048,
                 verbose=False,

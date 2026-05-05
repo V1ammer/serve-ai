@@ -90,6 +90,10 @@ def recommend_models(sys_info):
             for i, (q_name, size, desc) in enumerate(viable_quants[:3]):
                 label = f"{name}" if i == 0 else ""
                 table.add_row(label, q_name, f"{size:.1f}GB", desc, f"https://hf.co/{link}" if i == 0 else "")
+            
+            # Suggest DFlash drafter for this family
+            drafter_link = link.replace("-GGUF", "-DFlash-GGUF")
+            table.add_row("", "[bold yellow]DFlash Drafter[/bold yellow]", "<1.5GB", "Speedup 2x-4x", f"https://hf.co/{drafter_link}")
         else:
             table.add_row(name, "None", "Too Large", "N/A", f"https://hf.co/{link}")
     

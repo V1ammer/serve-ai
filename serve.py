@@ -7,6 +7,7 @@ from rich.console import Console
 def main():
     parser = argparse.ArgumentParser(description="Serve-AI: Local LLM Runner")
     parser.add_argument("--model", help="Path to the model file")
+    parser.add_argument("--draft", help="Path to the draft model (DFlash) for speedup")
     parser.add_argument("--engine", default="llama.cpp", choices=["llama.cpp", "vllm"], help="Engine to use")
     args = parser.parse_args()
 
@@ -41,7 +42,7 @@ def main():
         return
 
     if args.engine == "llama.cpp":
-        engine = LlamaCppEngine("llama.cpp", selected_model, sys_info['cpu']['threads'])
+        engine = LlamaCppEngine("llama.cpp", selected_model, sys_info['cpu']['threads'], args.draft)
         engine.chat()
     else:
         console.print("[yellow]vLLM serving for APU/CPU requires specific configuration (ROCm/OpenVINO).[/yellow]")
