@@ -1,0 +1,11 @@
+{
+  "objective": "Setup local AI serve environment with Qwen 3.6 models and benchmarking suite.",
+  "strategy": [
+    "Prioritize llama.cpp for CPU/APU stability due to severe 14GB RAM constraint.",
+    "Use uv for Python environment management.",
+    "Develop a hardware-adaptive benchmark script (detects RAM/VRAM) with isolated subprocess execution.",
+    "Benchmark Qwen3.6-35B-A3B (MoE) and Qwen3.6-27B (Dense) with heavy quantization (GGUF 2-bit, Q2_K) exclusively to start.",
+    "Deprioritize vLLM/SGLang as they will likely OOM due to PyTorch/KV cache overhead; test only if llama.cpp Q2_K succeeds.",
+    "Design benchmark runner to survive SIGKILL (OOM Killer) by using subprocesses and incremental result saving (JSONL)."
+  ]
+}

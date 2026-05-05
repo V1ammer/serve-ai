@@ -1,0 +1,16 @@
+{
+  "project": "serve-ai",
+  "lanes": {
+    "main": {
+      "owner": "gemini-cli-orchestrator",
+      "status": "active",
+      "baseline": "HEAD"
+    }
+  },
+  "hardware": {
+    "cpu": "AMD Ryzen 5 5600H",
+    "ram": "14GB (7.1GB Available)",
+    "gpu": "None (Integrated Radeon)",
+    "os": "Linux"
+  }
+}

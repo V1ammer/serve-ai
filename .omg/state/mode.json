@@ -1,0 +1,8 @@
+{
+  "mode": "balanced",
+  "planning_model": "gemini-3.1-pro-preview",
+  "execution_model": "gemini-3-flash-preview",
+  "quick_edit_model": "gemini-3.1-flash-lite-preview",
+  "verification_strictness": "normal",
+  "max_autonomous_cycles": 5
+}

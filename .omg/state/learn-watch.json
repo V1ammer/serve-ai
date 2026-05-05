@@ -1,0 +1,12 @@
+{
+  "last_session_id": "237876f0-2831-4126-ab5f-7b682111bc5a",
+  "last_event_key": "237876f0-2831-4126-ab5f-7b682111bc5a:transcript:8473815e7a09130bf0dfb3d75d7a53e269be379fed637324c068538070c737ac",
+  "last_prompted_session_id": "",
+  "last_reason": "short-session",
+  "last_prompted_at": "",
+  "last_user_message_count": 0,
+  "last_actionable_message_count": 0,
+  "deep_interview_lock_active": false,
+  "deep_interview_lock_source": "/home/killua/code/ai/serve/.omg/state/deep-interview.json",
+  "updated_at": "2026-05-05T16:11:23.796Z"
+}
