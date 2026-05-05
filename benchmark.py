@@ -40,30 +40,52 @@ def save_results_md(results, sys_info):
     return filename
 
 def recommend_models(sys_info):
-    """Recommends models based on detected hardware."""
-    available_gb = sys_info['ram']['available'] + sys_info['ram']['swap_total']
-    console = Console()
+    """Recommends best possible quantization based on total memory."""
+    # Total available memory calculation
+    total_vram = sum(gpu.get('vram_total', 0) for gpu in sys_info['gpus'])
+    total_mem = sys_info['ram']['total'] + sys_info['ram']['swap_total'] + total_vram
     
-    table = Table(title="Recommended Models to Download")
-    table.add_column("Model", style="cyan")
-    table.add_column("Quantization", style="magenta")
+    # We want to leave some room for the OS (roughly 20% or 2GB)
+    safe_limit = max(total_mem * 0.8, total_mem - 2)
+    
+    console = Console()
+    table = Table(title=f"Hardware-Adaptive Recommendations (Total Memory: {total_mem:.1f}GB)")
+    table.add_column("Model Family", style="cyan")
+    table.add_column("Best Quant for You", style="magenta")
     table.add_column("Est. Size", style="green")
+    table.add_column("Quality Level", style="yellow")
     table.add_column("HuggingFace Link", style="blue")
 
-    recommendations = [
-        ("Qwen3.6-27B", "Q2_K", "9GB", "bartowski/Qwen_Qwen3.6-27B-GGUF"),
-        ("Qwen3.6-35B-A3B", "Q2_K", "11GB", "bartowski/Qwen3.6-35B-A3B-GGUF")
+    # Define quants: (name, bits_per_weight, description)
+    QUANTS = [
+        ("Q8_0", 8.5, "Near Lossless"),
+        ("Q6_K", 6.6, "High Quality"),
+        ("Q5_K_M", 5.5, "Balanced"),
+        ("Q4_K_M", 4.8, "Standard"),
+        ("Q3_K_M", 3.7, "Lightweight"),
+        ("Q2_K", 2.6, "Extreme Compression")
     ]
-    
-    if available_gb > 16:
-        recommendations.append(("Qwen3.6-27B", "Q4_K_M", "16GB", "bartowski/Qwen_Qwen3.6-27B-GGUF"))
 
-    for name, quant, size, link in recommendations:
-        table.add_row(name, quant, size, f"https://hf.co/{link}")
+    MODELS_TO_CHECK = [
+        ("Qwen3.6-27B", 27, "bartowski/Qwen_Qwen3.6-27B-GGUF"),
+        ("Qwen3.6-35B-A3B", 35, "bartowski/Qwen3.6-35B-A3B-GGUF")
+    ]
+
+    for name, params, link in MODELS_TO_CHECK:
+        best_q = None
+        for q_name, bits, desc in QUANTS:
+            est_size = (params * bits) / 8
+            if est_size < safe_limit:
+                best_q = (q_name, est_size, desc)
+                break
+        
+        if best_q:
+            table.add_row(name, best_q[0], f"{best_q[1]:.1f}GB", best_q[2], f"https://hf.co/{link}")
+        else:
+            table.add_row(name, "None", "Too Large", "N/A", f"https://hf.co/{link}")
     
     console.print(table)
-    console.print("\n[bold yellow]To download, use:[/bold yellow]")
-    console.print("huggingface-cli download <link> --include \"*Q2_K.gguf\" --local-dir models/")
+    console.print("\n[bold yellow]Selection Logic:[/bold yellow] Chosen based on 80% of your total RAM+VRAM+Swap.")
 
 def main():
     parser = argparse.ArgumentParser(description="Hardware-Adaptive LLM Benchmark")
