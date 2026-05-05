@@ -4,12 +4,26 @@ import subprocess
 import shutil
 
 def get_ram_info():
-    """Returns total and available RAM in GB."""
+    """Returns total, available RAM and ZRAM in GB."""
     mem = psutil.virtual_memory()
+    zram_gb = 0
+    
+    if platform.system() == "Linux":
+        try:
+            # Check for zram in /proc/swaps
+            with open("/proc/swaps", "r") as f:
+                lines = f.readlines()[1:] # Skip header
+                for line in lines:
+                    parts = line.split()
+                    if "zram" in parts[0]:
+                        zram_gb += float(parts[2]) / (1024**2) # Size is in KB
+        except Exception:
+            pass
+            
     return {
         "total": mem.total / (1024**3),
         "available": mem.available / (1024**3),
-        "swap_total": psutil.swap_memory().total / (1024**3)
+        "zram": zram_gb
     }
 
 def get_cpu_info():

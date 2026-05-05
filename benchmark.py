@@ -40,16 +40,16 @@ def save_results_md(results, sys_info):
     return filename
 
 def recommend_models(sys_info):
-    """Recommends best possible quantization based on total memory."""
-    # Total available memory calculation
+    """Recommends best possible quantization based on total fast memory."""
+    # Fast memory only: RAM + ZRAM + VRAM
     total_vram = sum(gpu.get('vram_total', 0) for gpu in sys_info['gpus'])
-    total_mem = sys_info['ram']['total'] + sys_info['ram']['swap_total'] + total_vram
+    total_fast_mem = sys_info['ram']['total'] + sys_info['ram']['zram'] + total_vram
     
-    # We want to leave some room for the OS (roughly 20% or 2GB)
-    safe_limit = max(total_mem * 0.8, total_mem - 2)
+    # OS headroom: 15% or 1.5GB
+    safe_limit = max(total_fast_mem * 0.85, total_fast_mem - 1.5)
     
     console = Console()
-    table = Table(title=f"Hardware-Adaptive Recommendations (Total Memory: {total_mem:.1f}GB)")
+    table = Table(title=f"Hardware-Adaptive Recommendations (Fast Memory: {total_fast_mem:.1f}GB)")
     table.add_column("Model Family", style="cyan")
     table.add_column("Best Quant for You", style="magenta")
     table.add_column("Est. Size", style="green")
@@ -101,10 +101,10 @@ def main():
         recommend_models(sys_info)
         return
 
-    available_ram = sys_info['ram']['available'] + sys_info['ram']['swap_total']
+    available_fast_mem = sys_info['ram']['available'] + sys_info['ram']['zram']
     
     console.print(f"[bold green]Starting Benchmark[/bold green]")
-    console.print(f"Hardware: {sys_info['cpu']['model']} | RAM+Swap: {available_ram:.2f} GB")
+    console.print(f"Hardware: {sys_info['cpu']['model']} | Fast Memory (Avail+ZRAM): {available_fast_mem:.2f} GB")
 
     # In a real scenario, we would scan the models-dir for .gguf files
     # For now, we simulate the found models
