@@ -28,7 +28,13 @@ uv sync
 3. Run `uv sync`.
 
 ## Usage
-1. **Prepare Models:** Place your `.gguf` files in the `models/` directory.
+1. **Find Best Models for Your Hardware:**
+   ```bash
+   python benchmark.py --recommend
+   ```
+   (This will show you exactly which Qwen 3.6 versions will fit in your RAM and give you download links).
+
+2. **Prepare Models:** Place your `.gguf` files in the `models/` directory.
 2. **Run Standard Benchmark:**
    ```bash
    python benchmark.py
