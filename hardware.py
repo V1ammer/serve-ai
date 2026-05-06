@@ -23,13 +23,28 @@ def get_ram_info():
     return {
         "total": mem.total / (1024**3),
         "available": mem.available / (1024**3),
+        "swap_total": psutil.swap_memory().total / (1024**3),
         "zram": zram_gb
     }
 
 def get_cpu_info():
     """Returns CPU model and thread count."""
+    model = platform.processor()
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/cpuinfo", "r") as f:
+                for line in f:
+                    if "model name" in line:
+                        model = line.split(":")[1].strip()
+                        break
+        except Exception:
+            pass
+            
+    if not model:
+        model = "Unknown CPU"
+        
     return {
-        "model": platform.processor(),
+        "model": model,
         "threads": psutil.cpu_count(logical=True),
         "cores": psutil.cpu_count(logical=False)
     }

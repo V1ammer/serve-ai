@@ -39,7 +39,7 @@ class LlamaCppEngine(BenchmarkEngine):
                 n_threads=self.threads,
                 n_ctx=2048,
                 verbose=False,
-                n_gpu_layers=0 # Force CPU/APU via system RAM
+                n_gpu_layers=-1 # Offload all layers to GPU
             )
             
             start = time.time()
@@ -64,7 +64,8 @@ class TransformersEngine(BenchmarkEngine):
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
 
-            device = "cpu"
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            device_map = "auto" if torch.cuda.is_available() else "cpu"
             torch_dtype = torch.bfloat16 if self.dtype_str == "bfloat16" else torch.float32
             
             print(f"    [transformers] Loading model ({self.dtype_str} on {device})...")
@@ -72,7 +73,7 @@ class TransformersEngine(BenchmarkEngine):
             tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_path, 
-                device_map=device, 
+                device_map=device_map, 
                 torch_dtype=torch_dtype,
                 trust_remote_code=True
             )
